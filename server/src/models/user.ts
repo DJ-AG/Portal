@@ -1,5 +1,4 @@
-import mongoose from "mongoose";
-import crypto from "crypto";
+import { Document, Schema, Model, model } from "mongoose";import crypto from "crypto";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import * as config from "../utils/config"
@@ -19,8 +18,9 @@ interface UserDocument extends Document {
     getResetPasswordToken(): string;
   }
 
+export interface IUser extends UserDocument, Document {}
 
-const UserSchema = new mongoose.Schema({
+const UserSchema = new Schema<UserDocument>({
     name:{
         type: String,
         required: [true, "Please add a name"]
@@ -120,6 +120,6 @@ UserSchema.methods.getResetPasswordToken = function(){
     return resetToken
 }
 
-const UserModel = mongoose.model<UserDocument>("User", UserSchema);
+const UserModel:Model<IUser> = model<IUser>("User", UserSchema);
 
 export default UserModel;

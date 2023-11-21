@@ -1,37 +1,38 @@
-// Define an interface for the user object
-interface User {
-    id: string;
+export interface initialStateProps {
+  users: [{}];
+  currentUser: {
+    _id: string;
     name: string;
     email: string;
-    role: string;
-  }
-  
-  // Define the interface for the initialState
-  interface InitialState {
-    user: User;
-    token: string;
-    isLogged: boolean;
-    isLoading: boolean;
-    isError: boolean;
-    errorMessage: string;
-    successMessage: string;
-  }
-  
-  // initialState with interfaces
-  const initialState: InitialState = {
-    user: {
-      id: "",
-      name: "",
-      email: "",
-      role: "",
-    },
-    token: "",
-    isLogged: false,
-    isLoading: false,
-    isError: false,
-    errorMessage: "",
-    successMessage: "",
+    roleLevel: string;
   };
+  isLoading: boolean;
+  showAlert: boolean;
+  alertText: string;
+  alertType: string;
+}
 
-  export type { User, InitialState };
-  export { initialState };
+// export a constant called initialState
+// this constant will be the initial state of the application
+// it will be an object that conforms to the initialStateProps interface
+export const initialState: initialStateProps = {
+  users: [
+    {
+      _id: "",
+      firstname: "",
+      lastname: "",
+      email: "",
+      premises: [],
+      role: "",
+      availabilities: [],
+      reservations: [],
+      createdAt: "",
+      updatedAt: "",
+    },
+  ],
+  currentUser: { _id: "", name: "", email: "", roleLevel: "" },
+  isLoading: false,
+  showAlert: false,
+  alertText: "",
+  alertType: "",
+};

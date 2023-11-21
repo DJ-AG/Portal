@@ -1,30 +1,47 @@
-import express from 'express';
+import express, { Application } from 'express';
 import mongoose from 'mongoose';
-import logger from './config/logger.config';
-import authRouter from './routes/authRouter';
 import cors from 'cors';
+import path from 'path';
+import cookieParser from 'cookie-parser';
+import { requestLogger, unknownEndpoint, errorHandler } from './utils/middleware';
+import dotenv from 'dotenv';
 
+dotenv.config()
+
+import * as config from './utils/config';
 
 const app = express();
 
+app.use(cookieParser());
 
-// Middleware for parsing JSON
+import auth from './routes/authRouter';
+
+// Cors is required during development to allow the frontend access to
+// the backend. In production, the frontend and backend are served from
+// the same domain so cors is not needed. Unless other website frontends
+// on different domains need to use the API.
+if (config.node_env === 'development') app.use(cors());
+
+// Middlewares that need to be applied before adding routes.
 app.use(express.json());
+app.use(express.static('../client/dist'));
+app.use(requestLogger);
 
-app.use(cors(
-  {
-    origin: 'http://localhost:5173',
-    credentials: true
-  }
-));
+// Add routes
+// app.use();
 
+// Middlewares that need to be applied after adding routes.
+app.use('/api/auth', auth);
 
-app.use('/api/v1/auth', authRouter);
+app.use('/api/*', unknownEndpoint);
+app.use(errorHandler);
 
-
-// This might be handled better in your main server file
-app.on('close', () => {
-  mongoose.connection.close();
+// Paths that are not part of the API are handled by the frontend.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist/index.html'));
 });
+
+// Close the database connection when the app is closed.
+app.on('close', () => mongoose.connection.close());
 
 export default app;

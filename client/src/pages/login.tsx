@@ -9,8 +9,7 @@ interface LoginFormState {
 
 const Login: React.FC = () => {
   const [formState, setFormState] = useState<LoginFormState>({ email: '', password: '' });
-  const { userLogin } = useUserAction(); // Destructure the userLogin action creator
-  const userState = useTypedSelector(state => state.user); // Access the user state from the Redux store
+  const { loginUser, getUser } = useUserAction(); // Destructure the userLogin action creator
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormState({
@@ -19,9 +18,11 @@ const Login: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    userLogin(formState.email, formState.password); // Dispatch the userLogin action
+    const data = {email:formState.email, password:formState.password}
+    await loginUser(data); // Dispatch the userLogin action
+    await getUser()
   };
 
   // Add logic to handle state changes, loading, errors, etc.

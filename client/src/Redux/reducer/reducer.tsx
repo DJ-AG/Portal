@@ -1,75 +1,127 @@
-import { InitialState, initialState } from './initialState';
-import  ActionTypes from '../actions/types';
-import { Action } from '../actions/interface'
+import { initialState, initialStateProps } from "./initialState";
+import ActionTypes from "../actions/types";
 
+// Define the action interface for user-related actions
+interface UserAction {
+  type: ActionTypes;
+  payload?: any;
+}
 
-const reducer = (state: InitialState = initialState, action: Action): InitialState => {
-    switch(action.type) {
-        case ActionTypes.LOGIN_START:
-            return {
-                ...initialState,
-                isLoading: true,
-            };
-        case ActionTypes.LOGIN_SUCCESS:
-            return {
-                ...initialState,
-                user: action.payload.user,
-                token: action.payload.token,
-                isLogged: true,
-            };
-        case ActionTypes.LOGIN_FAILURE:
-            return {
-                ...initialState,
-                isError: true,
-                errorMessage: action.payload,
-            };
-        case ActionTypes.LOGOUT:
-            return initialState;
+// Main reducer
+const userReducer = (
+  state: initialStateProps = initialState,
+  action: UserAction
+): initialStateProps => {
+  switch (action.type) {
+    case ActionTypes.LOGIN_USER_BEGINS:
+      return {
+        ...state,
+        isLoading: true,
+      };
+    case ActionTypes.LOGIN_USER_SUCCESS:
+      return {
+        ...state,
+        isLoading: false,
+      };
+    case ActionTypes.LOGIN_USER_FAILURE:
+      return {
+        ...state,
+        isLoading: false,
+        alertType: "danger",
+        alertText: action.payload.message,
+      };
 
-        case ActionTypes.CREATE_USER_START:
-            return {
-                ...initialState,
-                isLoading: true,
-            };
-        case ActionTypes.CREATE_USER_SUCCESS:
-            return {
-                ...initialState,
-                user: action.payload.user,
-                token: action.payload.token,
-                isLogged: true,
-            };
-        case ActionTypes.CREATE_USER_FAILURE:
-            return {
-                ...initialState,
-                isError: true,
-                errorMessage: action.payload,
-            };
-        case ActionTypes.SET_LOADING:
-            return {
-                ...state,
-                isLoading: true,
-            };
-        case ActionTypes.START_CHECK_COOKIE:
-            return {
-                ...state,
-                isLoading: true,
-            };
-        case ActionTypes.CHECK_COOKIE_SUCCESS:
-            return {
-                ...state,
-                user: action.payload.user,
-                token: action.payload.token,
-                isLogged: true,
-            };
-        case ActionTypes.CHECK_COOKIE_FAILURE:
-            return {
-                ...state,
-                isError: true,
-            };
-            
-        default:
-            return state;
-    }
+    case ActionTypes.GET_ALL_USERS_BEGINS:
+      return {
+        ...state,
+        isLoading: true,
+      };
+    case ActionTypes.GET_ALL_USERS_SUCCESS:
+      return {
+        ...state,
+        users: action.payload,
+      };
+    case ActionTypes.GET_ALL_USERS_FAILURE:
+      return {
+        ...state,
+        isLoading: false,
+        alertType: "danger",
+        alertText: action.payload.message,
+      };
+      case ActionTypes.GET_USER_BY_ID_BEGINS:
+        return {
+          ...state,
+          isLoading: true,
+        };
+      case ActionTypes.GET_USER_BY_ID_SUCCESS:
+        return {
+          ...state,
+          currentUser: action.payload,
+        };
+      case ActionTypes.GET_USER_BY_ID_FAILURE:
+        return {
+          ...state,
+          isLoading: false,
+          alertType: "danger",
+          alertText: action.payload.message,
+        };
+    case ActionTypes.CREATE_USER_BEGINS:
+      return {
+        ...state,
+        isLoading: true,
+      };
+    case ActionTypes.CREATE_USER_SUCCESS:
+      return {
+        ...state,
+        isLoading: false,
+        alertType: "success",
+        alertText: action.payload.message,
+      };
+    case ActionTypes.CREATE_USER_FAILURE:
+      return {
+        ...state,
+        isLoading: false,
+        alertType: "danger",
+        alertText: action.payload.message,
+      };
+    case ActionTypes.LOGOUT_USER_BEGINS:
+      return {
+        ...state,
+        isLoading: true,
+      };
+    case ActionTypes.LOGOUT_USER_SUCCESS:
+      return {
+        ...initialState,
+      };
+    case ActionTypes.LOGOUT_USER_FAILURE:
+      return {
+        ...state,
+        isLoading: false,
+        alertType: "danger",
+        alertText: action.payload.message,
+      };
+
+    case ActionTypes.GET_USER_BEGINS:
+      return {
+        ...state,
+        isLoading: true,
+      };
+    case ActionTypes.GET_USER_SUCCESS:
+      return {
+        ...state,
+        currentUser: action.payload,
+        isLoading: false,
+      };
+    case ActionTypes.GET_USER_FAILURE:
+      return {
+        ...state,
+        isLoading: false,
+        alertType: "danger",
+        alertText: action.payload.message,
+      };
+    default:
+      return state;
+  }
 };
 
-export default reducer;
+export default userReducer;

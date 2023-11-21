@@ -1,73 +1,261 @@
-import User from "../models/user";
-import asyncErrorHandler from '../middleware/asyncErrorHandler'
-import ErrorResponse from "../utils/errorResponse";
+import { Request, Response, NextFunction } from "express";
+import crypto from "crypto";
+import asyncErrorHandler from "../middleware/asyncErrorHandler";
+import User, { IUser } from "../models/user";
 import * as config from "../utils/config";
 
 // @desc    Register user
-// @route   POST /api/v1/auth/register
+// @route   POST /api/auth/register
 // @access  Public
+export const register = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // Extract user information from the request body
+    const { name, email, password, roleLevel } = req.body;
 
-const register = asyncErrorHandler(async (req, res, next) => {
-    const { name, email, roleLevel, password } = req.body;
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      // Throw an error if the user already exists
+      throw new Error("User already exists!");
+    }
 
-    if(!name) return next(new ErrorResponse("Please provide a name", 400));
+    // Create a new user
+    const user: IUser = await User.create({
+      name,
+      email,
+      password,
+      roleLevel,
+    });
 
-    if(!email) return next(new ErrorResponse("Please provide an email", 400));
-
-    if(!password) return next(new ErrorResponse("Please provide a password", 400));
-
-    // Create user
-    const user = await User.create({name, email, roleLevel, password});
-
-    res.status(200).json({success: true, user});
-});
-
+    // Create a JWT token for the user and send it in the response
+    sendTokenResponse(user, 200, res);
+  }
+);
 
 // @desc    Login user
-// @route   POST /api/v1/auth/login
+// @route   POST /api/auth/login
 // @access  Public
+export const login = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { email, password } = req.body;
 
-const loginUser = asyncErrorHandler(async (req, res, next) => {
-  const { email, password } = req.body;
+    // Validate email & password
+    if (!email || !password) {
+      return res
+        .status(401)
+        .json({ error: "Please provide an email and password" });
+    }
 
-  if(!email || !password) return next(new ErrorResponse("Please provide an email and password", 400));
+    // Check for user with the provided email
+    const user = await User.findOne({ email }).select("+password");
 
-  const user = await User.findOne({email}).select("+password");
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-  if(!user) return next(new ErrorResponse( "Invalid credentials", 401));
+    // Check if the provided password matches the user's password
+    const isMatch = await user.matchPassword(password);
 
-  const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-  if(!isMatch) return next(new ErrorResponse("Invalid credentials",401));
+    // Create a JWT token for the user and send it in the response
+    sendTokenResponse(user, 200, res);
+  }
+);
 
-  sendTokenResponse(user, 200, res);
+//desc Log user out / clear cookie
+//@route GET /api/auth/logout
+//@access Private
+export const logout = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // Set the cookie to an empty string with an expiration date in the past
+    res.cookie("token", "none", {
+      expires: new Date(Date.now() + 10 * 1000),
+      httpOnly: true,
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: {},
+    });
+  }
+);
 
-})
+//@desc Get current logged in user
+//@route POST /api/auth/me
+//@access Private
+export const getMe = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // Find and send the currently authenticated user
+    const user = await User.findById(req.user.id);
 
+    res.status(200).json(user);
+  }
+);
 
-const sendTokenResponse = (user, statusCode, res) => {
-  const token = user.getSignedJwtToken();
+//@desc Update user details
+//@route PUT /api/auth/updatedetails
+//@access Private
+export const updateDetails = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // Define fields to update based on the request body
+    const fieldsToUpdate = {
+      firstname: req.body.firstname,
+      lastname: req.body.lastname,
+      email: req.body.email,
+    };
 
-  // Define the type for the options object
-  interface CookieOptions {
-    expires: Date;
-    httpOnly: boolean;
-    secure?: boolean; // The secure property is optional
+    // Find and update the user's details
+    const user = await User.findByIdAndUpdate(req.user.id, fieldsToUpdate, {
+      new: true,
+      runValidators: true,
+    });
+
+    // Respond with the updated user data
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  }
+);
+
+//@desc Update password
+//@route PUT /api/auth/updatepassword
+//@access Private
+export const updatePassword = asyncErrorHandler(async (req, res, next) => {
+  // Find the user by ID and include the password field
+  const user = await User.findById(req.user.id).select("+password");
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
   }
 
-  const options: CookieOptions = {
-    expires: new Date(Date.now() + config.jwt_cookie_expire * 24 * 60 * 60 * 1000),
-    httpOnly: true
+  // Check if the current password matches
+  if (!(await user.matchPassword(req.body.currentPassword))) {
+    return res.status(401).json({ error: "Password is incorrect" });
+  }
+
+  // Set the new password and save the user document
+  user.password = req.body.newPassword;
+
+  await user.save();
+
+  // Create a new JWT token for the user and send it in the response
+  sendTokenResponse(user, 200, res);
+});
+
+// Get token from model, create a cookie, and send a response
+export const sendTokenResponse = (
+  user: IUser,
+  statusCode: number,
+  res: Response
+) => {
+  // Create a JWT token
+  const token: string = user.getSignedJwtToken();
+
+  // Set options for the cookie
+  const options: {
+    expires: Date;
+    httpOnly: boolean;
+    secure?: boolean;
+  } = {
+    expires: new Date(
+      Date.now() + config.jwt_cookie_expire * 24 * 60 * 60 * 1000
+    ),
+    httpOnly: true,
   };
 
+  // If in production, enable secure flag for HTTPS
   if (config.node_env === "production") {
     options.secure = true;
   }
 
-  res.status(statusCode).cookie("token", token, options).json({success: true, token});
-}
+  // Send the response with the token and cookie
+  res
+    .status(statusCode)
+    .cookie("token", token, options)
+    .json({ success: true, token });
+};
 
+// @desc forgot password
+// @route POST /api/auth/forgotpassword
+// @access Public
+// export const forgotPassword = asyncErrorHandler(async (
+//   req: Request,
+//   res: Response,
+//   next: NextFunction
+//   ) => {
+//   // Find a user by their email
+//   const user = await User.findOne({ email: req.body.email });
 
+//   if (!user) {
+//     return res.status(404).json({ error: 'There is no user with that email' });
+//   }
 
+//   // Generate a reset token and save it to the user document
+//   const resetToken = user.getResetPasswordToken();
 
-export {register, loginUser};
+//   await user.save({ validateBeforeSave: false });
+
+//   // Create a reset URL for the user to use
+//   const resetUrl = `${req.protocol}://${req.get('host')}/api/auth/resetpassword/${resetToken}`;
+
+//   const message = `You are receiving this email because you
+//   (or someone else) has requested the reset of a password.
+//   Please make a PUT request to: \n\n ${resetUrl}`;
+
+//   try {
+//     // Send an email with the reset instructions
+//     await sendEmail({
+//       email: user.email,
+//       subject: 'Password reset token',
+//       message: message,
+//     });
+
+//     return res.status(200).json({ success: true, data: 'Email sent' });
+
+//   } catch (error) {
+//     console.error(error);
+//     // Clear the reset token and expiration if there's an error
+//     user.resetPasswordToken = undefined;
+//     user.resetPasswordExpire = undefined;
+
+//     await user.save({ validateBeforeSave: false });
+//     return res.status(500).json({ error: 'Email could not be sent' });
+//   }
+// });
+
+// @desc Reset password
+// @route PUT /api/auth/resetpassword/:resettoken
+// @access Public
+export const resetPassword = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // Get hashed token from the URL
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.resettoken)
+      .digest("hex");
+
+    // Find a user by the reset token and expiration date
+    const user = await User.findOne({
+      resetPasswordToken: resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(401).json({ error: "Invalid token" });
+    }
+
+    // Set the new password, clear the reset token and expiration, and save the user document
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    // Create a new JWT
+
+    sendTokenResponse(user, 200, res);
+  }
+);
