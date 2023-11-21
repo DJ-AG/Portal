@@ -14,7 +14,7 @@ const jwt_secret = process.env.JWT_SECRET
 
 const jwt_expire = process.env.JWT_EXPIRE
 
-const jwt_cookie_expire = process.env.JWT_COOKIE_EXPIRE
+const jwt_cookie_expire = parseInt(process.env.JWT_COOKIE_EXPIRE)
 
 const smtp_host = process.env.SMTP_HOST
 
