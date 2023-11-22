@@ -28,6 +28,10 @@ const from_email = process.env.FROM_EMAIL
 
 const from_name = process.env.FROM_NAME
 
+const refresh_token_secret = process.env.REFRESH_TOKEN_SECRET
+
+const refresh_token_expire = process.env.REFRESH_TOKEN_EXPIRE
+
 
 
 
@@ -44,5 +48,7 @@ export {
     smtp_email,
     smtp_password,
     from_email,
-    from_name
+    from_name,
+    refresh_token_secret,
+    refresh_token_expire
 }

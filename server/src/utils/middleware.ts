@@ -41,48 +41,50 @@ const errorHandler = (
 const protect = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     let token;
-    // Check if the request contains an "Authorization" header with a "Bearer" token
 
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.startsWith("Bearer")
-    ) {
+    // Check for token in Authorization header or cookies
+    if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+      // Get token from Authorization header
       token = req.headers.authorization.split(" ")[1];
     } else if (req.cookies.token) {
-      // If there's no "Authorization" header, check if the request contains a cookie with a JWT
+      // Get token from cookies
       token = req.cookies.token;
     }
 
-    
-
-    // If there's no token, return a 401 (Unauthorized) response
+    // If no token is found, return an unauthorized error
     if (!token) {
-      return res.status(401).json({ error: "Not authorized, no token" });
+      return res.status(401).json({ error: "Not authorized, no token provided" });
     }
 
+    try {
+      // Verify the token
+      const decoded = jwt.verify(token, config.jwt_secret) as jwt.JwtPayload;
 
-    // Verify the token and extract the user's ID
-    const decoded = jwt.verify(token, config.jwt_secret || '') as { id: string };
+      // Find the user by ID and check if the token is blacklisted
+      const user = await User.findById(decoded.id).select("-password");
+      if (user && user.isTokenBlacklisted(token)) {
+        return res.status(401).json({ error: "Token has been blacklisted" });
+      }
 
-    // Find the user in the database by their ID, excluding their password
-    req.user = await User.findById(decoded.id).select("-password");
-
-    // Log the user object for debugging purposes
-    console.log(req.user);
-
-    // Continue to the next middleware or route handler
-    next();
+      // Attach the user to the request object
+      req.user = user as IUser;
+      next();
+    } catch (error) {
+      // Handle any errors during token verification
+      console.error("Error in protect middleware:", error);
+      res.status(401).json({ error: "Not authorized, token invalid" });
+    }
   }
 );
 
 // Middleware function to authorize specific user roles for routes
-export const authorize = (...roles: string[]) => {
+export const authorize = (...roles) => {
   return (req: Request, res: Response, next: NextFunction) => {
     // Check if the user's role is included in the allowed roles
-    if (!roles.includes(req.user.roleLevel)) {
+    if (!roles.includes(req.user.role)) {
       return next(
         new Error(
-          `User role ${req.user.roleLevel} is not authorized to access this route`
+          `User is not authorized to access this route`
         )
       );
     }
@@ -91,5 +93,6 @@ export const authorize = (...roles: string[]) => {
     next();
   };
 };
+
 
 export { unknownEndpoint, errorHandler, requestLogger, protect };

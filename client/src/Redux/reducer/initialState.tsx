@@ -2,9 +2,10 @@ export interface initialStateProps {
   users: [{}];
   currentUser: {
     _id: string;
-    name: string;
+    firstname: string;
+    lastname: string;
     email: string;
-    roleLevel: string;
+    role: string;
   };
   isLoading: boolean;
   showAlert: boolean;
@@ -30,7 +31,7 @@ export const initialState: initialStateProps = {
       updatedAt: "",
     },
   ],
-  currentUser: { _id: "", name: "", email: "", roleLevel: "" },
+  currentUser: { _id: "", firstname: "",lastname:"", email: "", role: "" },
   isLoading: false,
   showAlert: false,
   alertText: "",

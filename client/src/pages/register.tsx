@@ -1,17 +1,19 @@
-import React, { useState } from 'react';
-import { useTypedSelector } from '../hooks/useTypeSelector'; // Adjust the import path as needed
-import { useUserAction } from '../hooks/useAction'; // Adjust the import path as needed
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useTypedSelector } from '../hooks/useTypeSelector'; 
+import { useUserAction } from '../hooks/useAction';
+import Cookies from "universal-cookie"; 
 
 interface RegisterFormState {
-    name: string;
+    firstname: string;
+    lastname:string;
     email: string;
     password: string;
 }
 
 const Register: React.FC = () => {
-    const [formState, setFormState] = useState<RegisterFormState>({ name: '', email: '', password: ''});
+    const [formState, setFormState] = useState<RegisterFormState>({ firstname: '', lastname:'', email: '', password: ''});
     const { registerUser } = useUserAction(); // Destructure the createUser action creator
-    const userState = useTypedSelector(state => state.user); // Access user state from Redux store
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormState({
@@ -22,21 +24,38 @@ const Register: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const data = {name:formState.name, email:formState.email, password:formState.password}
+        const data = {firstname:formState.firstname, lastname:formState.lastname, email:formState.email, password:formState.password}
         registerUser(data); // Dispatch the createUser action
         // If you have additional fields like name and roleLevel, include them in the action call
     };
 
-    // Add logic to handle state changes, loading, errors, etc.
+    const navigate = useNavigate();
+    const cookies = new Cookies();
+  
+   const PortalCookie = cookies.get("PortalToken");
+  
+    useEffect(() => {
+       if(PortalCookie) {
+        console.log("cookie exists, navigating to landing")
+        navigate('/')};
+       
+       }, [PortalCookie]);
 
     return (
-        <div className="register-container">
-            <form className="register-form" onSubmit={handleSubmit}>
+        <div className="auth-container">
+            <form className="auth-form" onSubmit={handleSubmit}>
                 <input
                     type="text"
-                    name="name"
-                    placeholder="Name"
-                    value={formState.name}
+                    name="firstname"
+                    placeholder="First Name"
+                    value={formState.firstname}
+                    onChange={handleInputChange}
+                />
+                                <input
+                    type="text"
+                    name="lastname"
+                    placeholder="Last Name"
+                    value={formState.lastname}
                     onChange={handleInputChange}
                 />
                 <input
@@ -55,6 +74,9 @@ const Register: React.FC = () => {
                 />
                 <button type="submit">Register</button>
             </form>
+            <p>
+    Already have an account? <Link to="/login">Login here</Link>
+  </p>
         </div>
     );
 };

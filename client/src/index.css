@@ -1,22 +1,43 @@
-.login-container {
+.auth-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh; /* Full viewport height */
 }
 
-.login-form {
+.auth-form {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.login-form input {
+.auth-form input {
   margin: 10px;
   padding: 8px;
 }
 
-.login-form button {
+.auth-form button {
+  margin: 10px;
+  padding: 8px 15px;
+}
+
+/*Landing Page*/
+.landing-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+.app-redirect-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px; /* Adjust as needed */
+}
+
+.app-redirect-container button {
   margin: 10px;
   padding: 8px 15px;
 }

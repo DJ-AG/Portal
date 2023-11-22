@@ -5,7 +5,7 @@ import {
   register,
   login,
   resetPassword,
-  getMe,
+  getUser,
   updateDetails,
   updatePassword,
   logout
@@ -22,8 +22,6 @@ router.post("/register", register);
 // Route for user login
 router.post("/login", login);
 
-// Route for user logout
-router.get("/logout", logout);
 
 
 // Route for handling forgotten passwords
@@ -35,8 +33,11 @@ router.put("/resetpassword/:resettoken", resetPassword);
 // Routes below require authentication, so we use the protect middleware
 router.use(protect);
 
+// Route for user logout
+router.get("/logout", logout);
+
 // Route for getting the authenticated user's details
-router.get("/me", getMe);
+router.get("/user", getUser);
 
 // Route for updating user details
 router.put("/updateDetails", updateDetails);

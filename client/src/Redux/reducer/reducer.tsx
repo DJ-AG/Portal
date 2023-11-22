@@ -57,6 +57,7 @@ const userReducer = (
         return {
           ...state,
           currentUser: action.payload,
+          isLoading: false,
         };
       case ActionTypes.GET_USER_BY_ID_FAILURE:
         return {
@@ -117,7 +118,7 @@ const userReducer = (
         ...state,
         isLoading: false,
         alertType: "danger",
-        alertText: action.payload.message,
+        alertText: action.payload,
       };
     default:
       return state;

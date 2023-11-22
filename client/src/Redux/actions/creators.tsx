@@ -139,7 +139,7 @@ export const getUser = () => {
     dispatch({ type: ActionTypes.GET_USER_BEGINS });
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/auth/me",
+        "http://localhost:5000/api/auth/user",
         config()
       );
       const userData = response.data;      
@@ -150,10 +150,10 @@ export const getUser = () => {
       
       return userData;
     
-    } catch (error) {
+    } catch (error:any) {
       dispatch({
         type: ActionTypes.GET_USER_FAILURE,
-        payload: error,
+        payload: error.response.statusText,
       });
     }
   };

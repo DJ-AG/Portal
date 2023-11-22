@@ -3,64 +3,65 @@ import crypto from "crypto";
 import asyncErrorHandler from "../middleware/asyncErrorHandler";
 import User, { IUser } from "../models/user";
 import * as config from "../utils/config";
+import jwt from "jsonwebtoken";
 
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
 export const register = asyncErrorHandler(
+
   async (req: Request, res: Response, next: NextFunction) => {
-    // Extract user information from the request body
-    const { name, email, password, roleLevel } = req.body;
+
+    const { firstname, lastname, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      // Throw an error if the user already exists
-      throw new Error("User already exists!");
-    }
 
+    if (existingUser) throw new Error("User already exists!")
+    
     // Create a new user
     const user: IUser = await User.create({
-      name,
+      firstname,
+      lastname,
       email,
       password,
-      roleLevel,
     });
 
-    // Create a JWT token for the user and send it in the response
     sendTokenResponse(user, 200, res);
   }
 );
+
 
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
 export const login = asyncErrorHandler(
+
   async (req: Request, res: Response, next: NextFunction) => {
+
     const { email, password } = req.body;
 
     // Validate email & password
-    if (!email || !password) {
-      return res
-        .status(401)
-        .json({ error: "Please provide an email and password" });
-    }
+    
+    if (!email) return res.status(400).json({ error: "Email is required" });
 
-    // Check for user with the provided email
+    if (!password) return res.status(400).json({ error: "Password is required" });
+
+
+    email.toLowerCase();
+
     const user = await User.findOne({ email }).select("+password");
 
-    if (!user) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
 
+    if (!user)return res.status(401).json({ error: "Invalid credentials" });
+    
     // Check if the provided password matches the user's password
+
     const isMatch = await user.matchPassword(password);
 
-    if (!isMatch) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    // Create a JWT token for the user and send it in the response
+    if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
+        
     sendTokenResponse(user, 200, res);
+
   }
 );
 
@@ -69,23 +70,40 @@ export const login = asyncErrorHandler(
 //@access Private
 export const logout = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    // Set the cookie to an empty string with an expiration date in the past
-    res.cookie("token", "none", {
-      expires: new Date(Date.now() + 10 * 1000),
-      httpOnly: true,
-    });
-    
-    res.status(200).json({
-      success: true,
-      data: {},
-    });
+    try {
+      const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(" ")[1]);
+
+      if (!token) {
+        return res.status(401).json({ error: "Not authorized, token not found" });
+      }
+
+      const decoded = jwt.verify(token, config.jwt_secret) as jwt.JwtPayload;
+
+      const user = await User.findById(req.user.id) as IUser;
+      if (user) {
+        await user.blacklistToken(token, new Date(decoded.exp * 1000));
+      }
+
+      res.cookie("token", "none", {
+        expires: new Date(Date.now() + 10 * 1000),
+        httpOnly: true,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: "Logout successful",
+      });
+    } catch (error) {
+      console.error("Error during logout:", error);
+      return res.status(500).json({ error: "Internal Server Error" });
+    }
   }
 );
 
 //@desc Get current logged in user
-//@route POST /api/auth/me
+//@route POST /api/auth/user
 //@access Private
-export const getMe = asyncErrorHandler(
+export const getUser = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     // Find and send the currently authenticated user
     const user = await User.findById(req.user.id);
@@ -151,31 +169,26 @@ export const sendTokenResponse = (
   statusCode: number,
   res: Response
 ) => {
-  // Create a JWT token
   const token: string = user.getSignedJwtToken();
 
-  // Set options for the cookie
   const options: {
     expires: Date;
     httpOnly: boolean;
+    domain: string;
     secure?: boolean;
+    sameSite?: 'lax' | 'strict' | 'none';
   } = {
-    expires: new Date(
-      Date.now() + config.jwt_cookie_expire * 24 * 60 * 60 * 1000
-    ),
+    expires: new Date(Date.now() + config.jwt_cookie_expire * 24 * 60 * 60 * 1000),
     httpOnly: true,
+    domain: '.yourmaindomain.com', // Set your main domain here
+    sameSite: 'lax'
   };
 
-  // If in production, enable secure flag for HTTPS
   if (config.node_env === "production") {
     options.secure = true;
   }
 
-  // Send the response with the token and cookie
-  res
-    .status(statusCode)
-    .cookie("token", token, options)
-    .json({ success: true, token });
+  res.status(statusCode).cookie("token", token, options).json({ success: true, token });
 };
 
 // @desc forgot password

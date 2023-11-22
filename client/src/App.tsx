@@ -8,7 +8,7 @@ import {
 import Login from "./pages/login";
 import Register from "./pages/register";
 import Landing from './pages/landing';
-import {CookieChecker} from "./components/cookie-checker";
+import {CookieChecker} from "./util/cookie-checker";
 
 // This import the BrowserRouter, Routes, and Route components from the react-router-dom library.
 // These components are used to create a routing system for the application.

@@ -4,6 +4,9 @@ import cors from 'cors';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import { requestLogger, unknownEndpoint, errorHandler } from './utils/middleware';
+import rateLimit from 'express-rate-limit';
+import csurf from 'csurf';
+import helmet from 'helmet';
 import dotenv from 'dotenv';
 
 dotenv.config()
@@ -12,7 +15,20 @@ import * as config from './utils/config';
 
 const app = express();
 
+// Set up rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
+
 app.use(cookieParser());
+
+app.use(limiter);
+
+app.use(helmet());
+
+if (config.node_env === 'production') app.use(csurf({ cookie: true }));
+
 
 import auth from './routes/authRouter';
 
