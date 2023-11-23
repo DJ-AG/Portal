@@ -4,7 +4,7 @@ import { setToken } from "../Redux/actions/creators";
 import { useUserAction } from "../hooks/useAction";
 
 export const CookieChecker = () => {
-  const { getUser } = useUserAction();
+  const { getMe } = useUserAction();
   const cookies = new Cookies();
 
   const autoLogin = async () => {
@@ -12,7 +12,7 @@ export const CookieChecker = () => {
     setToken(PortalCookie);
 
     if (PortalCookie) {
-      await getUser();
+      await getMe();
     }
   };
 

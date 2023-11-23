@@ -8,11 +8,10 @@ interface RegisterFormState {
     firstname: string;
     lastname:string;
     email: string;
-    password: string;
 }
 
 const Register: React.FC = () => {
-    const [formState, setFormState] = useState<RegisterFormState>({ firstname: '', lastname:'', email: '', password: ''});
+    const [formState, setFormState] = useState<RegisterFormState>({ firstname: '', lastname:'', email: ''});
     const { registerUser } = useUserAction(); // Destructure the createUser action creator
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -24,22 +23,10 @@ const Register: React.FC = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const data = {firstname:formState.firstname, lastname:formState.lastname, email:formState.email, password:formState.password}
+        const data = {firstname:formState.firstname, lastname:formState.lastname, email:formState.email}
         registerUser(data); // Dispatch the createUser action
         // If you have additional fields like name and roleLevel, include them in the action call
     };
-
-    const navigate = useNavigate();
-    const cookies = new Cookies();
-  
-   const PortalCookie = cookies.get("PortalToken");
-  
-    useEffect(() => {
-       if(PortalCookie) {
-        console.log("cookie exists, navigating to landing")
-        navigate('/')};
-       
-       }, [PortalCookie]);
 
     return (
         <div className="auth-container">
@@ -65,17 +52,10 @@ const Register: React.FC = () => {
                     value={formState.email}
                     onChange={handleInputChange}
                 />
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formState.password}
-                    onChange={handleInputChange}
-                />
-                <button type="submit">Register</button>
+                <button type="submit">Create User</button>
             </form>
             <p>
-    Already have an account? <Link to="/login">Login here</Link>
+    <Link to="/">return to landing</Link>
   </p>
         </div>
     );

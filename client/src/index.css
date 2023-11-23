@@ -21,23 +21,78 @@
   padding: 8px 15px;
 }
 
-/*Landing Page*/
+/* Landing Page */
 .landing-page {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100vh;
+  background: #f7f7f7; /* Light grey background */
+  color: #333; /* Dark grey text */
+  font-family: 'Arial', sans-serif; /* Modern font */
+}
+
+.user-info {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1); /* subtle shadow */
+  border-radius: 8px; /* rounded corners */
+  width: 300px; /* fixed width */
+  text-align: center; /* center text */
+}
+
+.user-info p {
+  margin: 5px 0; /* smaller gap between lines */
+}
+
+button {
+  background-color: #0056b3; /* Button color */
+  color: white;
+  border: none;
+  border-radius: 5px; /* rounded corners for buttons */
+  cursor: pointer; /* cursor effect on hover */
+  font-size: 16px; /* larger font size */
+  font-weight: bold; /* bold font */
+  transition: background-color 0.3s ease; /* transition for button hover */
+}
+
+button:hover {
+  background-color: #003d82; /* Button hover state color */
 }
 
 .app-redirect-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 20px; /* Adjust as needed */
+  margin-top: 20px;
 }
 
 .app-redirect-container button {
   margin: 10px;
-  padding: 8px 15px;
+  padding: 8px 30px; /* Larger padding for buttons */
+  width: 200px; /* fixed width for buttons */
+}
+
+/* Link styling */
+a {
+  color: #0056b3; /* Link color */
+  text-decoration: none; /* no underline */
+  font-weight: bold; /* bold font */
+}
+
+a:hover {
+  text-decoration: underline; /* underline on hover */
+}
+
+/* Extra: Adding a footer */
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+  background: #333;
+  color: white;
 }

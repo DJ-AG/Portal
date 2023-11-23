@@ -30,13 +30,19 @@ app.use(helmet());
 if (config.node_env === 'production') app.use(csurf({ cookie: true }));
 
 
-import auth from './routes/authRouter';
+import authenticate from './routes/authenticateRoute';
+import user from './routes/userRoute';
+import  authorize  from './routes/authorizeRoute';
 
 // Cors is required during development to allow the frontend access to
 // the backend. In production, the frontend and backend are served from
 // the same domain so cors is not needed. Unless other website frontends
 // on different domains need to use the API.
-if (config.node_env === 'development') app.use(cors());
+if (config.node_env === 'development') {
+  app.use(cors({ origin: 'http://localhost:5173',
+  credentials: true, }));
+}
+
 
 // Middlewares that need to be applied before adding routes.
 app.use(express.json());
@@ -47,7 +53,9 @@ app.use(requestLogger);
 // app.use();
 
 // Middlewares that need to be applied after adding routes.
-app.use('/api/auth', auth);
+app.use('/api/auth', authenticate);
+app.use('/api/user', user);
+app.use('/api/authorize', authorize);
 
 app.use('/api/*', unknownEndpoint);
 app.use(errorHandler);

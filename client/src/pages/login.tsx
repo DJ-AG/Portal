@@ -12,7 +12,7 @@ interface LoginFormState {
 
 const Login: React.FC = () => {
   const [formState, setFormState] = useState<LoginFormState>({ email: '', password: '' });
-  const { loginUser, getUser } = useUserAction(); // Destructure the userLogin action creator
+  const { loginUser, getMe } = useUserAction(); // Destructure the userLogin action creator
   const user = useTypedSelector(state => state.user); // Destructure the userLogin action creator
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,7 +26,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     const data = {email:formState.email, password:formState.password}
     await loginUser(data); // Dispatch the userLogin action
-    await getUser()
+    await getMe()
   };
 
   const navigate = useNavigate();

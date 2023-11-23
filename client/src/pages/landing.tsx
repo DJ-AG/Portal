@@ -1,23 +1,24 @@
 import React,{useEffect} from 'react';
 import { useTypedSelector } from '../hooks/useTypeSelector'; 
 import { useUserAction } from '../hooks/useAction'; 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Cookies from "universal-cookie";
 
 const LandingPage: React.FC = () => {
   const userState = useTypedSelector(state => state.user.currentUser);
   const state = useTypedSelector(state => state.user);
+
   const { logoutUser } = useUserAction();
 
   const navigate = useNavigate();
   const cookies = new Cookies();
 
  const PortalCookie = cookies.get("PortalToken");
- console.log(state.alertText)
 
   useEffect(() => {
-     if(!PortalCookie ) {
+     if(!PortalCookie ||state.alertText === "Unauthorized") {
       console.log("navigating to login")
+      cookies.remove("PortalToken");
       navigate('/login')};
      
      }, [PortalCookie]);
@@ -44,6 +45,11 @@ const LandingPage: React.FC = () => {
           <button onClick={() => handleAppRedirect('http://localhost:5123')}>App2</button>
           <button onClick={() => handleAppRedirect('http://localhost:5000')}>App3</button>
         </div>
+        {userState.role === 'admin' && (
+        <p>
+          Create user <Link to="/register">Create User</Link> (Visible only to admins)
+        </p>
+      )}
       </div>
     );
   };

@@ -1,34 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
+
 import asyncErrorHandler from "../middleware/asyncErrorHandler";
 import User, { IUser } from "../models/user";
 import * as config from "../utils/config";
-import jwt from "jsonwebtoken";
 
-// @desc    Register user
-// @route   POST /api/auth/register
-// @access  Public
-export const register = asyncErrorHandler(
-
-  async (req: Request, res: Response, next: NextFunction) => {
-
-    const { firstname, lastname, email, password } = req.body;
-
-    const existingUser = await User.findOne({ email });
-
-    if (existingUser) throw new Error("User already exists!")
-    
-    // Create a new user
-    const user: IUser = await User.create({
-      firstname,
-      lastname,
-      email,
-      password,
-    });
-
-    sendTokenResponse(user, 200, res);
-  }
-);
+import { generateRandomPassword } from "./user";
 
 
 // @desc    Login user
@@ -70,7 +48,7 @@ export const login = asyncErrorHandler(
 //@access Private
 export const logout = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    try {
+    
       const token = req.cookies.token || (req.headers.authorization && req.headers.authorization.split(" ")[1]);
 
       if (!token) {
@@ -93,17 +71,13 @@ export const logout = asyncErrorHandler(
         success: true,
         message: "Logout successful",
       });
-    } catch (error) {
-      console.error("Error during logout:", error);
-      return res.status(500).json({ error: "Internal Server Error" });
-    }
   }
 );
 
 //@desc Get current logged in user
-//@route POST /api/auth/user
+//@route POST /api/auth/getMe
 //@access Private
-export const getUser = asyncErrorHandler(
+export const getMe = asyncErrorHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     // Find and send the currently authenticated user
     const user = await User.findById(req.user.id);
@@ -111,6 +85,34 @@ export const getUser = asyncErrorHandler(
     res.status(200).json(user);
   }
 );
+
+// For testing purposes
+export const register = asyncErrorHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { firstname, lastname, email } = req.body;
+
+    // email validation
+    const emailValid = /@edu\.hel\.fi$/.test(email) || /@hel\.fi$/.test(email);
+    if (!emailValid) return res.status(400).json({ error: "Email must end with @edu.hel.fi or @hel.fi"});
+
+    // Generate a random password
+    const password = generateRandomPassword();
+
+    const existingUser = await User.findOne({ email });
+    if (existingUser) throw new Error("User already exists!")
+    console.log(password)
+    // Create a new user
+    const user: IUser = await User.create({
+      firstname,
+      lastname,
+      email,
+      password,
+    });
+
+    sendTokenResponse(user, 200, res);
+  }
+);
+
 
 //@desc Update user details
 //@route PUT /api/auth/updatedetails
@@ -272,3 +274,14 @@ export const resetPassword = asyncErrorHandler(
     sendTokenResponse(user, 200, res);
   }
 );
+
+export const validateSession = (req, res) => {
+  // If the middleware has successfully attached the user object, the session is valid
+  if (req.user) {
+    console.log('User is authenticated');
+    res.json({ isAuthenticated: true, user: req.user });
+  } else {
+    console.log('User is not authenticated');
+    res.json({ isAuthenticated: false });
+  }
+};
