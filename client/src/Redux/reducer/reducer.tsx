@@ -120,6 +120,27 @@ const userReducer = (
         alertType: "danger",
         alertText: action.payload,
       };
+
+    case ActionTypes.VERTIFY_SSO_BEGINS:
+      return {
+        ...state,
+        isLoading: true,
+      };
+
+    case ActionTypes.VERTIFY_SSO_SUCCESS:
+      return {
+        ...state,
+        currentUser: action.payload,
+        isLoading: false,
+      };
+    case ActionTypes.VERTIFY_SSO_FAILURE:
+      return {
+        ...state,
+        isLoading: false,
+        alertType: "danger",
+        alertText: action.payload,
+      };
+      
     default:
       return state;
   }

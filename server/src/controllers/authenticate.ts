@@ -37,8 +37,12 @@ export const login = asyncErrorHandler(
     const isMatch = await user.matchPassword(password);
 
     if (!isMatch) return res.status(401).json({ error: "Invalid credentials" });
-        
-    sendTokenResponse(user, 200, res);
+    
+    // Generate token
+    const token = jwt.sign({ id: user._id, role: user.role }, config.jwt_secret, { expiresIn: config.jwt_expire });
+
+    // Return the token
+    res.status(200).json({ token });
 
   }
 );

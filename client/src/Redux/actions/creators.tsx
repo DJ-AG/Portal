@@ -43,26 +43,7 @@ export const setToken = (newToken: string) => token = newToken;
 export const config = () => { return { headers: { Authorization: `Bearer ${token}` }}};
 
 
-
-export const getAllUsers = () => {
-
-  return async (dispatch: Dispatch<UserAction<ActionTypes, User[]>>) => {
-
-    dispatch({ type: ActionTypes.GET_ALL_USERS_BEGINS });
-
-    try {
-      // Make an API call to fetch all user data from your backend
-      const response = await axios.get(`${url}/api/users`, config());
-
-      const userData = response.data;
-      
-      dispatch({type: ActionTypes.GET_ALL_USERS_SUCCESS,payload: userData,});
-
-    } catch (error) {dispatch({type: ActionTypes.GET_ALL_USERS_FAILURE,payload: error as any})}
-
-  };
-};
-
+//-------------------------Authenticate Creators-------------------------//
 
 export const loginUser = (credentials: { email: string; password: string }) => {
 
@@ -74,12 +55,13 @@ export const loginUser = (credentials: { email: string; password: string }) => {
       
       const response = await axios.post(`${url}/api/auth/login`, credentials);
 
+
       const userData = response.data;
 
       token = userData.token;
 
       cookies.set("PortalToken", token, { expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 3),path: "/",});
-      
+
       dispatch({type: ActionTypes.LOGIN_USER_SUCCESS,payload: userData,});
 
     } catch (error) {dispatch({type: ActionTypes.LOGIN_USER_FAILURE,payload: error as any,})}
@@ -87,6 +69,44 @@ export const loginUser = (credentials: { email: string; password: string }) => {
   };
 };
 
+export const handleSSOLogin = (url: string) => {
+  return async (dispatch: Dispatch) => {
+    dispatch({ type: ActionTypes.VERTIFY_SSO_BEGINS });
+
+    const token = cookies.get("PortalToken");
+
+    try {
+      console.log("Data to be sent:", token);
+
+      // Using axios for the POST request
+      const response = await axios.post(url + '/api/authorize/verifyToken', { token });
+
+      const data = response.data;
+      
+      console.log("Data received:", data)
+
+      if (data.valid) {
+          console.log("SSO Login Successful");
+
+          // Dispatch a success action
+          dispatch({ type: ActionTypes.VERTIFY_SSO_SUCCESS, payload: data.user });
+
+      } else {
+          console.error('SSO Login Failed:', data.error);
+
+          // Dispatch a failure action
+          dispatch({ type: ActionTypes.VERTIFY_SSO_FAILURE, payload: data.error });
+      }
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || error.message || 'An unknown error occurred';
+      console.error('SSO Login Request Failed:', errorMessage);
+      dispatch({ type: ActionTypes.VERTIFY_SSO_FAILURE, payload: errorMessage });
+    }
+  };
+};
+
+
+//-------------------------Authorize Creators-------------------------//
 
 export const logoutUser = () => {
 
@@ -129,7 +149,24 @@ export const getMe = () => {
   };
 };
 
+export const getAllUsers = () => {
 
+  return async (dispatch: Dispatch<UserAction<ActionTypes, User[]>>) => {
+
+    dispatch({ type: ActionTypes.GET_ALL_USERS_BEGINS });
+
+    try {
+      // Make an API call to fetch all user data from your backend
+      const response = await axios.get(`${url}/api/users`, config());
+
+      const userData = response.data;
+      
+      dispatch({type: ActionTypes.GET_ALL_USERS_SUCCESS,payload: userData,});
+
+    } catch (error) {dispatch({type: ActionTypes.GET_ALL_USERS_FAILURE,payload: error as any})}
+
+  };
+};
 
 export const registerUser = (credentials: RegisterUser) => {
 

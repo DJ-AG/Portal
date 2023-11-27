@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user";
 import asyncErrorHandler from "../middleware/asyncErrorHandler";
+import axios from "axios";
+import * as config from "../utils/config";
 
 
 export const verifyToken = asyncErrorHandler(async (req: Request, res: Response) => {
@@ -10,14 +12,40 @@ export const verifyToken = asyncErrorHandler(async (req: Request, res: Response)
     if (!token) {
         return res.status(400).json({ message: "Token is required" });
     }
+        const decoded = jwt.verify(token, config.jwt_secret);
 
-    const decoded: jwt.JwtPayload = jwt.verify(token, process.env.JWT_SECRET) as jwt.JwtPayload;
+        res.status(200).json({ valid: true, decoded });
 
-    const user = await User.findById(decoded.id);
-
-    if (!user) {
-        return res.status(404).json({ message: "User not found" });
-    }
-    // Optionally include additional user information in the response
-    res.status(200).json({ user: { id: user._id, email: user.email } });
 });
+
+
+
+
+export const handleSSO = asyncErrorHandler(async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+
+    
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user || !(await user.matchPassword(password))) {
+
+        return res.status(401).send({ error: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ id: user._id }, config.jwt_secret, { expiresIn: '1h' });
+
+    // Replace with the actual external service URL and necessary payload
+    const externalServiceResponse = await axios.post('https://external-service.com/api/auth', { token });
+
+    // Handle the response from the external service
+    res.json({ success: true, message: 'Logged in successfully', data: externalServiceResponse.data });
+
+});
+
+export const fowardUser = asyncErrorHandler(async (req: Request, res: Response) => {
+
+        const user = await User.findById(req.params.id);
+    
+        res.status(200).json({ success: true, data: user });
+    
+      });

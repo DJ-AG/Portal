@@ -4,11 +4,12 @@ import { useUserAction } from '../hooks/useAction';
 import { useNavigate, Link } from "react-router-dom";
 import Cookies from "universal-cookie";
 
+
 const LandingPage: React.FC = () => {
   const userState = useTypedSelector(state => state.user.currentUser);
   const state = useTypedSelector(state => state.user);
 
-  const { logoutUser } = useUserAction();
+  const { logoutUser, handleSSOLogin } = useUserAction();
 
   const navigate = useNavigate();
   const cookies = new Cookies();
@@ -32,24 +33,24 @@ const LandingPage: React.FC = () => {
     return (
       <div className="landing-page">
         <div className="user-info">
-          <p>First Name: {userState.firstname}</p>
-          <p>Last Name: {userState.lastname}</p>
-          <p>Email: {userState.email}</p>
-          <p>Role Level: {userState.role}</p>
+        <p>First Name: {userState?.firstname ?? 'Loading...'}</p>
+        <p>First Name: {userState?.firstname ?? 'Loading...'}</p>
+        <p>First Name: {userState?.firstname ?? 'Loading...'}</p>
+        <p>First Name: {userState?.firstname ?? 'Loading...'}</p>
         </div>
         <button onClick={logoutUser}>Logout</button>
   
         {/* App redirect buttons container */}
         <div className="app-redirect-container">
-          <button onClick={() => handleAppRedirect('http://localhost:5122')}>App1</button>
-          <button onClick={() => handleAppRedirect('http://localhost:5123')}>App2</button>
-          <button onClick={() => handleAppRedirect('http://localhost:5000')}>App3</button>
+          <button onClick={() => handleSSOLogin('http://localhost:3001')}>App1</button>
+          <button onClick={() => handleSSOLogin('http://localhost:5123')}>App2</button>
+          <button onClick={() => handleSSOLogin('http://localhost:5000')}>App3</button>
         </div>
-        {userState.role === 'admin' && (
+        {/* {userState.role === 'admin' && (
         <p>
           Create user <Link to="/register">Create User</Link> (Visible only to admins)
         </p>
-      )}
+      )} */}
       </div>
     );
   };

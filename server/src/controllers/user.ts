@@ -45,6 +45,7 @@ export const createUser = asyncErrorHandler(
   
       // Generate a random password
       const password = generateRandomPassword();
+      console.log(password)
   
       const existingUser = await User.findOne({ email });
       if (existingUser) throw new Error("User already exists!")
